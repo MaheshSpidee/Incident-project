@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: incident
+          POSTGRES_PASSWORD: incident
+          POSTGRES_DB: incident_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U incident -d incident_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://incident:incident@localhost:5432/incident_test?schema=public
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+      INGESTION_API_KEY: ci-ingestion-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test

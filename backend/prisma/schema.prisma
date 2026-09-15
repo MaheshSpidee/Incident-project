@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  operator
+  admin
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+}
+
+enum IncidentStatus {
+  open
+  escalated
+  acknowledged
+  resolved
+}
+
+enum ActorType {
+  user
+  system
+  device
+}
+
+model User {
+  id           String            @id @default(uuid()) @db.Uuid
+  email        String            @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime          @default(now())
+  assigned     Incident[]        @relation("AssignedIncidents")
+  history      IncidentHistory[]
+}
+
+model Incident {
+  id              String              @id @default(uuid()) @db.Uuid
+  eventId         String?
+  source          String
+  type            String
+  severity        IncidentSeverity
+  message         String
+  status          IncidentStatus      @default(open)
+  occurredAt      DateTime
+  receivedAt      DateTime            @default(now())
+  escalationDueAt DateTime?
+  escalatedAt     DateTime?
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  assignedTo      String?             @db.Uuid
+  version         Int                 @default(1)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  assignee        User?               @relation("AssignedIncidents", fields: [assignedTo], references: [id], onDelete: SetNull)
+  history         IncidentHistory[]
+
+  @@unique([source, eventId])
+  @@index([status, severity, receivedAt])
+  @@index([source])
+  @@index([receivedAt, id])
+}
+
+model IncidentHistory {
+  id          String    @id @default(uuid()) @db.Uuid
+  incidentId  String    @db.Uuid
+  fromStatus  IncidentStatus?
+  toStatus    IncidentStatus?
+  actorId     String?   @db.Uuid
+  actorType   ActorType
+  action      String
+  details     Json?
+  createdAt   DateTime  @default(now())
+  incident    Incident  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actor       User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId, createdAt])
+}
+
+model WorkerHeartbeat {
+  name                  String   @id
+  lastSuccessfulCheckAt DateTime
+  checkedCount          Int      @default(0)
+  escalatedCount        Int      @default(0)
+  updatedAt             DateTime @updatedAt
+}

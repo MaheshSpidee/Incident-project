@@ -9,7 +9,7 @@
     "worker": "node dist/src/workers/escalationWorker.js",
     "worker:dev": "tsx src/workers/escalationWorker.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "prisma generate && tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "db:migrate": "prisma migrate deploy",
     "db:dev": "prisma migrate dev",

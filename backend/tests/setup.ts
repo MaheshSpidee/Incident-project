@@ -1,10 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { beforeEach } from 'vitest';
 import { prisma } from '../src/shared/prisma.js';
+import { assertSafeTestDatabase } from './testDatabaseGuard.js';
 
-if (!process.env.DATABASE_URL?.includes('test')) {
-  throw new Error('Refusing to run tests without a test database URL');
-}
+assertSafeTestDatabase();
 
 export async function resetDb() {
   await prisma.incidentHistory.deleteMany();

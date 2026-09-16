@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, type Incident } from '../api/client.js';
 import { useAuth } from '../components/AuthProvider.js';
 
@@ -25,34 +25,51 @@ export function Dashboard() {
   const list = useQuery({ queryKey: ['incidents', params.toString()], queryFn: () => api.incidents(params), refetchInterval: 5000 });
   const detail = useQuery({ queryKey: ['incident', selected], queryFn: () => api.incident(selected!), enabled: Boolean(selected) });
   const users = useQuery({ queryKey: ['users'], queryFn: api.users, enabled: user?.role === 'admin' });
+  const refreshVisibleData = () => {
+    list.refetch();
+    if (selected) detail.refetch();
+  };
   const mutateStatus = useMutation({
     mutationFn: ({ id, next, version }: { id: string; next: 'acknowledged' | 'resolved'; version: number }) => api.status(id, next, version),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['incidents'] }); qc.invalidateQueries({ queryKey: ['incident'] }); },
+    onSuccess: (response) => {
+      qc.setQueryData(['incident', response.data.id], response);
+      qc.invalidateQueries({ queryKey: ['incidents'] });
+    },
     onError: (error: any) => {
       if (error?.status === 409) {
         qc.invalidateQueries({ queryKey: ['incidents'] });
-        qc.invalidateQueries({ queryKey: ['incident'] });
+        if (selected) qc.invalidateQueries({ queryKey: ['incident', selected] });
       }
     },
   });
   const assign = useMutation({
     mutationFn: ({ id, assignedTo, version }: { id: string; assignedTo: string | null; version: number }) => api.assign(id, assignedTo, version),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['incidents'] }); qc.invalidateQueries({ queryKey: ['incident'] }); },
+    onSuccess: (response) => {
+      qc.setQueryData(['incident', response.data.id], response);
+      qc.invalidateQueries({ queryKey: ['incidents'] });
+    },
     onError: (error: any) => {
       if (error?.status === 409) {
         qc.invalidateQueries({ queryKey: ['incidents'] });
-        qc.invalidateQueries({ queryKey: ['incident'] });
+        if (selected) qc.invalidateQueries({ queryKey: ['incident', selected] });
       }
     },
   });
   const items = list.data?.data ?? [];
   const active = detail.data?.data;
+  useEffect(() => {
+    if (!selected || !active) return;
+    const selectedListItem = items.find((item) => item.id === selected);
+    if (selectedListItem && selectedListItem.version !== active.version) {
+      detail.refetch();
+    }
+  }, [active, detail, items, selected]);
   return <main className="dashboard">
     <section className="filters">
       <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}><option value="">All status</option><option>open</option><option>escalated</option><option>acknowledged</option><option>resolved</option></select>
       <select value={severity} onChange={(e) => { setPage(1); setSeverity(e.target.value); }}><option value="">All severity</option><option>low</option><option>medium</option><option>high</option></select>
       <input placeholder="Search source" value={source} onChange={(e) => { setPage(1); setSource(e.target.value); }} />
-      <button onClick={() => list.refetch()}><RefreshCw size={16} /> Refresh</button>
+      <button onClick={refreshVisibleData}><RefreshCw size={16} /> Refresh</button>
       <span className="refresh">{list.dataUpdatedAt ? `Updated ${new Date(list.dataUpdatedAt).toLocaleTimeString()}` : 'Not refreshed yet'}</span>
       {list.isError && <span className="error">Refresh failed</span>}
     </section>

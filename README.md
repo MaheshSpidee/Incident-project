@@ -246,7 +246,7 @@ Frontend HTTP serving is not the same as browser end-to-end interaction.
 
 ## Time Spent
 
-Fill this in before submission.
+Current assignment time accounting:
 
 | Category | Time |
 | --- | --- |

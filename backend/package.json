@@ -10,21 +10,22 @@
     "worker:dev": "tsx src/workers/escalationWorker.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
     "typecheck": "prisma generate && tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "test": "prisma generate && vitest run",
     "db:migrate": "prisma migrate deploy",
     "db:dev": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "6.1.0",
     "bcryptjs": "2.4.3",
     "cors": "2.8.5",
     "dotenv": "16.4.7",
-    "express": "4.21.2",
+    "express": "4.22.3",
     "express-rate-limit": "7.5.0",
     "helmet": "8.0.0",
     "jsonwebtoken": "9.0.2",
     "pg": "8.13.1",
+    "prisma": "6.1.0",
     "zod": "3.24.1"
   },
   "devDependencies": {
@@ -34,10 +35,9 @@
     "@types/jsonwebtoken": "9.0.7",
     "@types/node": "24.13.4",
     "@types/supertest": "6.0.2",
-    "prisma": "6.1.0",
     "supertest": "7.0.0",
-    "tsx": "4.19.2",
+    "tsx": "4.23.13",
     "typescript": "5.7.2",
-    "vitest": "2.1.8"
+    "vitest": "5.0.1"
   }
 }

@@ -15,7 +15,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/package.json
 COPY backend/prisma ./backend/prisma
-RUN npm ci -w backend --include-workspace-root
+RUN npm ci -w backend --include-workspace-root --omit=dev
 COPY --from=build /app/backend/dist ./backend/dist
 WORKDIR /app/backend
 EXPOSE 4000

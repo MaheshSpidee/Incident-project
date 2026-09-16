@@ -54,6 +54,8 @@ Notification jobs should carry stable notification identifiers, and provider ide
 
 Provider acceptance or delivery is separate from human acknowledgement. A provider can accept a page while the incident remains open. Escalation policy should define primary and secondary responders, fan-out timing, and when acknowledgement stops future paging. The system should not promise guaranteed human contact during a total communications outage.
 
+Degraded modes should preserve the acceptance time and retry path. If PostgreSQL is degraded after queue acceptance, consumers keep retrying queued events until retention is exhausted, and the original acceptance timestamp is used when the incident is finally written. If the ingestion queue is degraded, the API returns a retryable error and devices retry with the same event ID rather than pretending the event was accepted. If a notification provider is degraded, delivery workers back off with jitter, try fallback providers or channels when policy allows, and move exhausted jobs to a dead-letter queue for replay. Critical alerts do not become guaranteed human contact during provider or communications outages; they remain durable work items that page responders once dependencies recover.
+
 ## Monitoring and Failure Modes
 
 Production monitoring should track ingestion queue age, consumer lag, escalation lateness, worker heartbeat freshness, notification failure rate, dead-letter depth, database health, lock waits, and API latency. External synthetic checks should exercise ingestion and operator paths. The alerting system itself needs an independent alert channel so failures in notification delivery can still be noticed.

@@ -129,11 +129,11 @@ export async function changeStatus(id: string, toStatus: 'acknowledged' | 'resol
       acknowledgedAt: toStatus === 'acknowledged' ? new Date() : current.acknowledgedAt,
       resolvedAt: toStatus === 'resolved' ? new Date() : current.resolvedAt,
     };
-    const updated = await tx.incident.update({ where: { id }, data, include: includeDetails });
+    await tx.incident.update({ where: { id }, data });
     await tx.incidentHistory.create({
       data: { incidentId: id, fromStatus: current.status, toStatus, actorId, actorType: 'user', action: toStatus },
     });
-    return updated;
+    return tx.incident.findUniqueOrThrow({ where: { id }, include: includeDetails });
   });
 }
 
@@ -147,10 +147,9 @@ export async function assignIncident(id: string, assignedTo: string | null, acto
       const user = await tx.user.findUnique({ where: { id: assignedTo } });
       if (!user) throw new AppError(400, 'invalid_assignee', 'Assigned user does not exist');
     }
-    const updated = await tx.incident.update({
+    await tx.incident.update({
       where: { id },
       data: { assignedTo, version: { increment: 1 } },
-      include: includeDetails,
     });
     await tx.incidentHistory.create({
       data: {
@@ -161,7 +160,7 @@ export async function assignIncident(id: string, assignedTo: string | null, acto
         details: { from: current.assignedTo, to: assignedTo },
       },
     });
-    return updated;
+    return tx.incident.findUniqueOrThrow({ where: { id }, include: includeDetails });
   });
 }
 

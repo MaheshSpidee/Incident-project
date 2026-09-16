@@ -9,7 +9,7 @@ export const ingestionSchema = z.object({
   type: z.string().trim().min(1).max(120),
   severity: z.enum(['low', 'medium', 'high']),
   message: z.string().trim().min(1).max(2000),
-  timestamp: z.coerce.date(),
+  timestamp: z.string().datetime().transform((value) => new Date(value)),
   eventId: z.string().trim().min(1).max(200).optional(),
 });
 
